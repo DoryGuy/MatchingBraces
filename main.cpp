@@ -39,6 +39,7 @@ constexpr std::pair<RESULT_t, std::unique_ptr<std::exception>> parse(std::string
     int countParens{0};
     int countSquareBrackets{0};
     int countCurlyBraces{0};
+    int countAngleBraces{0};
     
     for (auto c: input ){
         switch(c){
@@ -46,10 +47,6 @@ constexpr std::pair<RESULT_t, std::unique_ptr<std::exception>> parse(std::string
                 ++countParens;
                 break;
             case ')':
-//                if (countSquareBrackets && countParens >= countSquareBrackets)
-//                    return {FAIL, std::unique_ptr<missMatched>(new missMatched("SquareBrackets", input))};
-//                if (countCurlyBraces && countParens >= countCurlyBraces)
-//                    return {FAIL,std::unique_ptr<missMatched>(new missMatched("CurlyBraces", input))};
                 --countParens;
                 if (countParens < 0)
                     return {FAIL,std::unique_ptr<missMatched>(new missMatched("Parens", input))};
@@ -58,10 +55,6 @@ constexpr std::pair<RESULT_t, std::unique_ptr<std::exception>> parse(std::string
                 ++countSquareBrackets;
                 break;
             case ']':
-//                if (countParens && countSquareBrackets >= countParens)
-//                    return {FAIL,std::unique_ptr<missMatched>(new missMatched("Parens", input))};
-//                if (countCurlyBraces && countSquareBrackets >= countCurlyBraces)
-//                    return {FAIL, std::unique_ptr<missMatched>(new missMatched("CurlyBraces", input))};
                 --countSquareBrackets;
                 if (countSquareBrackets < 0)
                     return {FAIL,std::unique_ptr<missMatched>(new missMatched("SquareBrackets", input))};
@@ -70,19 +63,24 @@ constexpr std::pair<RESULT_t, std::unique_ptr<std::exception>> parse(std::string
                 ++countCurlyBraces;
                 break;
             case '}':
-//                if (countParens && countParens <= countCurlyBraces)
-//                    return {FAIL,std::unique_ptr<missMatched>(new missMatched("Parens", input))};
-//                if (countSquareBrackets && countSquareBrackets <= countCurlyBraces)
-//                    return {FAIL,std::unique_ptr<missMatched>(new missMatched("SquareBrackets", input))};
                 --countCurlyBraces;
                 if (countCurlyBraces < 0)
                     return {FAIL,std::unique_ptr<missMatched>(new missMatched("CurlyBraces", input))};
+                break;
+            case '<':
+                ++countAngleBraces;
+                break;
+            case '>':
+                --countAngleBraces;
+                if (countAngleBraces < 0)
+                    return {FAIL,std::unique_ptr<missMatched>(new missMatched("AngleBraces", input))};
                 break;
         }
     }
     if (countParens) return {FAIL,std::unique_ptr<missMatched>(new missMatched("Parans",input))};
     if (countSquareBrackets) return {FAIL,std::unique_ptr<missMatched>(new missMatched("SquareBrackets",input))};
     if (countCurlyBraces) return {FAIL,std::unique_ptr<missMatched>(new missMatched("CurlyBraces", input))};
+    if (countAngleBraces) return {FAIL,std::unique_ptr<missMatched>(new missMatched("AngleBraces", input))};
 
     return {PASS, std::unique_ptr<std::exception>(new std::exception())};
 }
@@ -106,8 +104,13 @@ int main() {
                        make_pair("[{()}]", PASS),
                        make_pair("", PASS),
                        make_pair(")", FAIL),
+                       make_pair("(", FAIL),
                        make_pair("]", FAIL),
+                       make_pair("[", FAIL),
                        make_pair("}", FAIL),
+                       make_pair("{", FAIL),
+                       make_pair(">", FAIL),
+                       make_pair("<", FAIL),
                        make_pair("({)", FAIL),
                        make_pair("(})", FAIL),
                        make_pair("([)", FAIL),
@@ -116,6 +119,9 @@ int main() {
                        make_pair("[(]", FAIL),
                        make_pair("[)]", FAIL),
                        make_pair("[{]", FAIL),
+                       make_pair("<(>", FAIL),
+                       make_pair("<[>", FAIL),
+                       make_pair("<{>", FAIL),
                        make_pair("({])", FAIL),
                        make_pair("([})", FAIL),
                        make_pair("((]}", FAIL),
@@ -128,16 +134,21 @@ int main() {
                        make_pair("(([))]", FAIL),
                        make_pair("{(}", FAIL),
                        make_pair("{[}", FAIL),
+                       make_pair("{<}", FAIL),
                        make_pair("()(", FAIL),
+                       make_pair(")(", FAIL),
                        make_pair("][", FAIL),
                        make_pair("}{", FAIL),
                        make_pair("()", PASS),
                        make_pair("[]", PASS),
                        make_pair("{}", PASS),
+                       make_pair("<>", PASS),
+                       make_pair("<()>", PASS),
+                       make_pair("><", FAIL),
                        make_pair("()[]", PASS),
                        make_pair("(){}", PASS),
                        make_pair("[]{}", PASS),
-                       make_pair("()[]{}", PASS)
+                       make_pair("()[]{}<>", PASS)
     };
     for (auto i : input) {
         auto result = parse(i.first);
